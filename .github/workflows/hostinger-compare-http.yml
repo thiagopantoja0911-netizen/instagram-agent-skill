@@ -1,0 +1,31 @@
+name: Hostinger diagnostic comparison
+
+on:
+  push:
+    branches: [chatgpt-plugin]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Compare IPv4 HTTPS status of existing and dedicated app
+        shell: bash
+        run: |
+          set -u
+          for host in mcp.secretssystem.online instagram-mcp.secretssystem.online; do
+            echo "==== $host ===="
+            curl -4 -sS -m 12 -o /tmp/hostinger-response-body.txt -D /tmp/hostinger-response-headers.txt \
+              -w 'http=%{http_code} ip=%{remote_ip} ssl_verify=%{ssl_verify_result} total=%{time_total}s\n' \
+              "https://$host/health" || true
+            grep -Ei '^(server|content-type|via|retry-after|cache-control|x-)' /tmp/hostinger-response-headers.txt | head -12 || true
+            echo "response_length=$(wc -c < /tmp/hostinger-response-body.txt)"
+          done
+      - name: Check DNS resolutions (non-sensitive)
+        shell: bash
+        run: |
+          getent ahostsv4 instagram-mcp.secretssystem.online | head -5 || true
+          getent ahostsv4 mcp.secretssystem.online | head -5 || true
