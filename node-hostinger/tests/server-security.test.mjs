@@ -18,6 +18,19 @@ test('unauthenticated server stays locked without OAuth configuration', async ()
     const state = await health.json();
     assert.equal(state.auth, 'locked');
     assert.equal(state.ready, false);
+
+    const publicHealth = await fetch(origin + '/health', {
+      headers: {host: 'instagram-mcp.secretssystem.online'},
+    });
+    assert.equal(publicHealth.status, 200);
+    const publicState = await publicHealth.json();
+    assert.equal(publicState.auth, 'locked');
+    assert.equal(publicState.ready, false);
+
+    const invalidHostHealth = await fetch(origin + '/health', {
+      headers: {host: 'attacker.example'},
+    });
+    assert.equal(invalidHostHealth.status, 403);
     const anonymous = await fetch(origin + '/mcp', {
       method: 'POST',
       headers: {'content-type': 'application/json'},
