@@ -7,6 +7,7 @@ for (const key of Object.keys(process.env)) {
   if (key.startsWith('INSTAGRAM_MCP_')) delete process.env[key];
 }
 const {app, configured} = await import('../server.mjs');
+const {runtimeStatusForTests} = await import('../runtime.mjs');
 
 test('unauthenticated server stays locked without OAuth configuration', async () => {
   assert.equal(configured, false);
@@ -30,6 +31,8 @@ test('unauthenticated server stays locked without OAuth configuration', async ()
       body: JSON.stringify({jsonrpc: '2.0', method: 'tools/list', id: 2, params: {}}),
     });
     assert.equal(rejectedOrigin.status, 403);
+    assert.equal(runtimeStatusForTests().workerRunning, false,
+      'health and unauthenticated requests must not allocate Pyodide');
   } finally {
     if (listener.listening) await new Promise((resolve, reject) => listener.close(err => err ? reject(err) : resolve()));
   }
