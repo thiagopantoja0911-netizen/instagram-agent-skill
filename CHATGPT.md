@@ -21,3 +21,7 @@ Conectar um MCP remoto HTTPS autenticado para executar os seis scripts; implemen
 ## Créditos
 
 Autor original: Jake Schincariol; origem https://github.com/Jakeschincariol/instagram-agent-skill; licença MIT preservada em LICENSE.
+
+## Alternativa Hostinger Node.js
+
+A pasta `node-hostinger/` contém um servidor MCP remoto com Pyodide que executa os seis scripts Python originais dentro do Node.js, sem Python separado. O GitHub Actions compara a saída desse interpretador com a dos scripts originais. O serviço foi publicado de forma isolada na Hostinger, mas o acesso MCP **permanece bloqueado enquanto OAuth não for configurado**. Esta implantação não significa que as ferramentas estejam disponíveis no plugin. Consulte `node-hostinger/README.md` antes de conectar qualquer URL.
