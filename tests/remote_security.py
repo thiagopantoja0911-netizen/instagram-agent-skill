@@ -56,7 +56,67 @@ async def test_unauthorized() -> None:
     print("PASS remote auth: anonymous MCP tools/list denied (401)")
 
 
+
+async def test_token_introspection() -> None:
+    """Accept only an active, unexpired token for the correct issuer/audience/scope."""
+    from unittest.mock import patch
+    import httpx
+    from server.remote_app import IntrospectionVerifier
+
+    resource = "https://mcp.example.com/mcp"
+    issuer = "https://accounts.example.com"
+    future = __import__("time").time() + 300
+    good = {
+        "active": True,
+        "client_id": "authorized-chatgpt",
+        "iss": issuer,
+        "aud": resource,
+        "scope": "instagram:analyze",
+        "exp": future,
+        "sub": "test-user",
+    }
+
+    class FakeClient:
+        def __init__(self, **kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            pass
+
+        async def post(self, url, **kwargs):
+            token = kwargs["data"]["token"]
+            if token == "valid":
+                return httpx.Response(200, json=good)
+            if token == "bad-audience":
+                return httpx.Response(200, json={**good, "aud": "https://other.example/mcp"})
+            if token == "expired":
+                return httpx.Response(200, json={**good, "exp": 1})
+            if token == "no-scope":
+                return httpx.Response(200, json={**good, "scope": "profile:read"})
+            return httpx.Response(200, json={"active": False})
+
+    verifier = IntrospectionVerifier(
+        endpoint=f"{issuer}/introspect",
+        issuer=issuer,
+        resource=resource,
+        client_id="introspection-client",
+        client_secret="fake-test-secret",
+        scope="instagram:analyze",
+    )
+    with patch("server.remote_app.httpx.AsyncClient", FakeClient):
+        valid = await verifier.verify_token("valid")
+        assert valid is not None
+        assert str(valid.resource) == resource
+        for invalid in ("bad-audience", "expired", "no-scope", "revoked"):
+            assert await verifier.verify_token(invalid) is None, invalid
+    print("PASS OAuth introspection: correct token accepted; wrong tokens denied")
+
+
 if __name__ == "__main__":
     test_no_config()
     asyncio.run(test_unauthorized())
+    asyncio.run(test_token_introspection())
     print("REMOTE SECURITY SMOKE TESTS PASSED")
