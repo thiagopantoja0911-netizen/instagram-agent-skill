@@ -2,7 +2,7 @@ name: Hostinger Node Pyodide parity
 
 on:
   push:
-    branches: [chatgpt-plugin, deploy/instagram-hostinger]
+    branches: [chatgpt-plugin, deploy/instagram-hostinger, fix/instagram-host-validation]
   workflow_dispatch:
 
 permissions:
