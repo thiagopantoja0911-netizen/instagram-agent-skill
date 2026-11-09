@@ -37,7 +37,7 @@ jobs:
           find skills server tests -type d -name __pycache__ -prune -exec rm -rf {} +
           find skills server tests -type f -name '*.pyc' -delete
           mkdir -p dist
-          zip -q -r dist/instagram-agent-chatgpt.zip plugin.json CHATGPT.md README_CHATGPT.md LICENSE README.md skills templates server tests .claude-plugin
+          zip -q -r dist/instagram-agent-chatgpt.zip plugin.json CHATGPT.md README_CHATGPT.md LICENSE README.md skills templates server tests node-hostinger .claude-plugin
           unzip -t dist/instagram-agent-chatgpt.zip | tail -1
       - uses: actions/upload-artifact@v4
         with:
