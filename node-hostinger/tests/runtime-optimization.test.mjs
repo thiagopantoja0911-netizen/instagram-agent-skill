@@ -33,11 +33,11 @@ test('bounded runtime rejects extra concurrent jobs and preserves results', asyn
 test('bounded worker transport supports all six algorithms', async () => {
   const tests = [
     ['score_hooks', {hooks: ['I lost $18,000 because of one contract.']}, 'score'],
-    ['build_beats', {script: 'Here is what changed in our business.\\nReview before signing.\\n'}, 'total_seconds'],
+    ['build_beats', {script: 'Here is what changed in our business.\nReview before signing.\n'}, 'total_seconds'],
     ['lint_caption', {caption: 'Check the clause. #contracts'}, 'verdict'],
     ['humanize_text', {text: "In today's fast-paced world—check this clause."}, 'report'],
     ['detect_human_score', {text: 'I lost $18,000 because of one contract.'}, 'human_score'],
-    ['analyze_swipe_file', {tsv: 'account\\tfollowers\\tmedian\\tviews\\thook\\n@a\\t12000\\t1000\\t12000\\tnobody tells you what matters\\n@b\\t9000\\t2000\\t5000\\tmy client lost three invoices\\n'}, 'reels'],
+    ['analyze_swipe_file', {tsv: 'account\tfollowers\tmedian\tviews\thook\n@a\t12000\t1000\t12000\tnobody tells you what matters\n@b\t9000\t2000\t5000\tmy client lost three invoices\n'}, 'reels'],
   ];
   for (const [tool, args, key] of tests) {
     const result = await invokeToolBounded(tool, args);
