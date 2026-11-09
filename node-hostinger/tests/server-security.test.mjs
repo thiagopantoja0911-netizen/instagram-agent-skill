@@ -1,5 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
+import {once} from 'node:events';
 
 process.env.NODE_ENV = 'test';
 for (const key of Object.keys(process.env)) {
@@ -10,6 +11,7 @@ const {app, configured} = await import('../server.mjs');
 test('unauthenticated server stays locked without OAuth configuration', async () => {
   assert.equal(configured, false);
   const listener = app.listen(0, '127.0.0.1');
+  await once(listener, 'listening');
   try {
     const origin = `http://127.0.0.1:${listener.address().port}`;
     const health = await fetch(origin + '/health');
@@ -29,6 +31,6 @@ test('unauthenticated server stays locked without OAuth configuration', async ()
     });
     assert.equal(rejectedOrigin.status, 403);
   } finally {
-    await new Promise((resolve, reject) => listener.close(err => err ? reject(err) : resolve()));
+    if (listener.listening) await new Promise((resolve, reject) => listener.close(err => err ? reject(err) : resolve()));
   }
 });
