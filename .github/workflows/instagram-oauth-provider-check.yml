@@ -40,10 +40,13 @@ jobs:
                             "/.well-known/oauth-authorization-server"):
               try:
                   candidate = get_json(issuer + wellknown)
-                  if candidate.get("issuer") == issuer:
+                  matches = candidate.get("issuer") == issuer
+                  print(f"INFO: {wellknown} metadata available; issuer exact match={matches}; PKCE S256 advertised={'S256' in candidate.get('code_challenge_methods_supported', [])}; CIMD={candidate.get('client_id_metadata_document_supported') is True}; DCR={bool(candidate.get('registration_endpoint'))}")
+                  if matches:
                       metadata = candidate
                       break
-              except Exception:
+              except Exception as exc:
+                  print(f"INFO: {wellknown} metadata unavailable ({type(exc).__name__})")
                   continue
           assert metadata is not None, "OAuth metadata not accessible or issuer mismatch"
           assert metadata.get("authorization_endpoint"), "Missing authorization endpoint"
