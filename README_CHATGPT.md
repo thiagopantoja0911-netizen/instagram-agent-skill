@@ -11,3 +11,11 @@ Esta branch contém um manifesto portátil de plugin em `plugin.json` e uma skil
 **Instalação:** o CI empacota um ZIP com `plugin.json` na raiz, as skills e todos os arquivos originais. Esse arquivo pode ser submetido no Plugin Creator ou importado segundo permissões da conta; instalar o ZIP não é equivalente a conectar automaticamente o MCP.
 
 **Créditos:** fork do projeto de Jake Schincariol, https://github.com/Jakeschincariol/instagram-agent-skill, sob licença MIT.
+
+## Evolução MCP e implantação
+
+A integração de protocolo foi testada usando `tests/mcp_integration.py` e o cliente oficial MCP v2. Todas as seis ferramentas respondem pelo protocolo; `tests/smoke.py` também cobre os executáveis Python originais.
+
+`server/remote_app.py` fornece entrada ASGI com autenticação OAuth 2.1 obrigatória e verificação de tokens por introspecção RFC 7662; `tests/remote_security.py` testa bloqueio por falta de configuração, rejeição anônima e regras de token. O contêiner em `server/Dockerfile` permite implantar em provedor compatível.
+
+**Importante:** o OAuth remoto ainda depende de um emissor configurado e de um domínio real. Não existe endpoint publicado ou vinculado ao ChatGPT neste momento. Consulte `server/DEPLOYMENT.md` antes de hospedar, e jamais exponha uma versão sem autenticação.
