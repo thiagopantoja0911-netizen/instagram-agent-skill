@@ -1,6 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {once} from 'node:events';
+import {request} from 'node:http';
 
 process.env.NODE_ENV = 'test';
 for (const key of Object.keys(process.env)) {
@@ -27,10 +28,23 @@ test('unauthenticated server stays locked without OAuth configuration', async ()
     assert.equal(publicState.auth, 'locked');
     assert.equal(publicState.ready, false);
 
-    const invalidHostHealth = await fetch(origin + '/health', {
-      headers: {host: 'attacker.example'},
+    // Node fetch/undici can normalize or override the Host header. Use the
+    // low-level HTTP client so this test really sends an untrusted hostname.
+    const invalidHostStatus = await new Promise((resolve, reject) => {
+      const requestWithHost = request({
+        hostname: '127.0.0.1',
+        port: listener.address().port,
+        path: '/health',
+        method: 'GET',
+        headers: {Host: 'attacker.example'},
+      }, response => {
+        response.resume();
+        resolve(response.statusCode);
+      });
+      requestWithHost.on('error', reject);
+      requestWithHost.end();
     });
-    assert.equal(invalidHostHealth.status, 403);
+    assert.equal(invalidHostStatus, 403);
     const anonymous = await fetch(origin + '/mcp', {
       method: 'POST',
       headers: {'content-type': 'application/json'},

@@ -1,0 +1,65 @@
+name: Instagram OAuth provider compatibility
+
+on:
+  push:
+    branches: [fix/instagram-host-validation]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Check public OAuth discovery and PKCE support
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json
+          import urllib.request
+          from urllib.parse import urlparse
+
+          resource_url = "https://instagram-mcp.secretssystem.online/.well-known/oauth-protected-resource"
+          def get_json(url):
+              with urllib.request.urlopen(urllib.request.Request(
+                  url, headers={"Accept": "application/json"}), timeout=15) as response:
+                  assert response.status == 200
+                  return json.load(response)
+
+          resource = get_json(resource_url)
+          assert resource["resource"] == "https://instagram-mcp.secretssystem.online/mcp"
+          issuers = resource["authorization_servers"]
+          assert len(issuers) > 0
+          issuer = issuers[0]
+          issuer_base = issuer.rstrip("/")
+          assert urlparse(issuer).scheme == "https"
+          metadata = None
+          for wellknown in ("/.well-known/openid-configuration",
+                            "/.well-known/oauth-authorization-server"):
+              try:
+                  candidate = get_json(issuer_base + wellknown)
+                  matches = candidate.get("issuer") == issuer
+                  normalized_matches = str(candidate.get("issuer", "")).rstrip("/") == issuer_base
+                  print(f"INFO: {wellknown} metadata available; issuer exact match={matches}; normalized match={normalized_matches}; PKCE S256 advertised={'S256' in candidate.get('code_challenge_methods_supported', [])}; CIMD={candidate.get('client_id_metadata_document_supported') is True}; DCR={bool(candidate.get('registration_endpoint'))}")
+                  if matches:
+                      metadata = candidate
+                      break
+              except Exception as exc:
+                  print(f"INFO: {wellknown} metadata unavailable ({type(exc).__name__})")
+                  continue
+          assert metadata is not None, "OAuth metadata not accessible or issuer mismatch"
+          assert metadata.get("authorization_endpoint"), "Missing authorization endpoint"
+          assert metadata.get("token_endpoint"), "Missing token endpoint"
+          methods = metadata.get("code_challenge_methods_supported", [])
+          assert "S256" in methods, "PKCE S256 is not advertised: ChatGPT OAuth cannot complete"
+          cimd = metadata.get("client_id_metadata_document_supported") is True
+          dcr = bool(metadata.get("registration_endpoint"))
+          if not (cimd or dcr):
+              print("WARNING: neither CIMD nor DCR is advertised; a pre-registered ChatGPT OAuth client is required.")
+          else:
+              print(f"PASS: OAuth discovery, PKCE S256, CIMD={cimd}, DCR={dcr}")
+          print("Note: valid user login, JWT audience/scope/subject and token refresh still require an actual OAuth sign-in.")
+          PY

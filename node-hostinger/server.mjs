@@ -41,6 +41,29 @@ const app = createMcpExpressApp({
   allowedHosts: [publicHostname, 'localhost', '127.0.0.1', '[::1]'],
   allowedOrigins: sdkAllowedOrigins,
 });
+// Validate the actual Host header on *every* route. The SDK-level allowedHosts
+// validation may only apply to MCP requests; /health must not be served on an
+// attacker-controlled hostname (for example, via DNS rebinding).
+const trustedHostnames = new Set([
+  publicHostname.toLowerCase(), 'localhost', '127.0.0.1', '[::1]',
+]);
+app.use((req, res, next) => {
+  let hostname;
+  try {
+    const value = req.get('host');
+    if (!value) throw new Error('MISSING_HOST');
+    const parsed = new URL(`http://${value}`);
+    if (parsed.username || parsed.password || parsed.pathname !== '/' ||
+        parsed.search || parsed.hash) throw new Error('MALFORMED_HOST');
+    hostname = parsed.hostname.toLowerCase();
+  } catch {
+    return res.status(403).json({error: 'HOST_NOT_ALLOWED'});
+  }
+  if (!trustedHostnames.has(hostname)) {
+    return res.status(403).json({error: 'HOST_NOT_ALLOWED'});
+  }
+  next();
+});
 app.disable('x-powered-by');
 app.use(express.json({limit: '256kb', type: 'application/json'}));
 
@@ -81,7 +104,11 @@ const TOOLS = [
 const handler = createMcpHandler(() => {
   const server = new McpServer({name: 'instagram-agent', version: '1.2.0'});
   for (const [name, description, inputSchema] of TOOLS) {
-    server.registerTool(name, {description, inputSchema}, async input => {
+    server.registerTool(name, {
+      description,
+      inputSchema,
+      _meta: {securitySchemes: [{type: 'oauth2', scopes: [scope]}]},
+    }, async input => {
       try {
         const output = await invokeTool(name, input);
         return {content: [{type: 'text', text: JSON.stringify(output)}]};
