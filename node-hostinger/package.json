@@ -9,7 +9,7 @@
     "start": "node server.mjs",
     "build": "node build.mjs",
     "pretest": "node build.mjs",
-    "check": "node --check engine.mjs && node --check server.mjs",
+    "check": "node --check engine.mjs && node --check worker.mjs && node --check runtime.mjs && node --check server.mjs",
     "test": "node --test tests/*.test.mjs"
   },
   "dependencies": {
