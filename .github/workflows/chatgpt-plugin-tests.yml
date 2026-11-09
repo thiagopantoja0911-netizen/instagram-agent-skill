@@ -1,0 +1,36 @@
+name: ChatGPT plugin checks
+
+on:
+  push:
+    branches: [chatgpt-plugin]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Syntax and original script smoke tests
+        run: |
+          python3 -m compileall -q skills server tests
+          python3 tests/smoke.py
+          python3 -m json.tool plugin.json >/dev/null
+          python3 -m json.tool skills/ig-reel/hooks.json >/dev/null
+          python3 -m json.tool skills/ig-profile/rubric.json >/dev/null
+          python3 -m json.tool skills/ig-human/slop.json >/dev/null
+      - name: Package original skills + ChatGPT adapter
+        run: |
+          mkdir -p dist
+          zip -q -r dist/instagram-agent-chatgpt.zip plugin.json CHATGPT.md LICENSE README.md skills templates server tests .claude-plugin
+          unzip -t dist/instagram-agent-chatgpt.zip | tail -1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: instagram-agent-chatgpt
+          path: dist/instagram-agent-chatgpt.zip
+          if-no-files-found: error
