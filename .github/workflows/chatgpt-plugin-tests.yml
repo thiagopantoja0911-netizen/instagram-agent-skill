@@ -20,6 +20,8 @@ jobs:
         run: python3 -m pip install -r server/requirements.txt
       - name: End-to-end MCP protocol tests
         run: python3 tests/mcp_integration.py
+      - name: Fail-closed remote security checks
+        run: python3 tests/remote_security.py
       - name: Syntax and original script smoke tests
         run: |
           python3 -m compileall -q skills server tests
