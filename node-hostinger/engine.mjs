@@ -9,6 +9,7 @@ import { resolve, dirname } from 'node:path';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '..');
+const VENDOR = resolve(HERE, 'vendor');
 const INPUT_LIMIT = 200_000;
 const PROGRAM_FILES = [
   'skills/ig-reel/hookscore.py', 'skills/ig-reel/beats.py',
@@ -27,7 +28,8 @@ let chain = Promise.resolve();
 async function initialize() {
   const py = await loadPyodide({ stdout: () => {}, stderr: () => {} });
   for (const file of PROGRAM_FILES) {
-    const bytes = await readFile(resolve(ROOT, file));
+    const bytes = await readFile(file === 'node-hostinger/bridge.py'
+      ? resolve(HERE, 'bridge.py') : resolve(VENDOR, file));
     const target = `/app/${file}`;
     py.FS.mkdirTree(dirname(target));
     py.FS.writeFile(target, bytes);
