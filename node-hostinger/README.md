@@ -48,3 +48,19 @@ O código valida assinatura RS256/ES256, `iss`, `aud`, prazo de validade pelo SD
 5. Confirmar `/health`, requisição anônima bloqueada e ferramentas autorizadas pelo ChatGPT após OAuth.
 
 O plano atual da Hostinger tem limites de processamento e execução por request; medir uso de memória WebAssembly e latência depois de habilitar acesso. Não há login no Instagram, scraping nem publicação automática.
+
+## Otimização de recursos (branch `optimization/hostinger-resources`)
+
+O servidor usa `runtime.mjs` e `worker.mjs` para reduzir RAM ociosa:
+
+- Não importa/carrega Pyodide durante o boot, `/health` ou solicitações anônimas; o WASM só é inicializado após autenticação e chamada de ferramenta.
+- Usa **no máximo um Worker Thread** por aplicativo (não um processo novo por chamada). As ferramentas aguardam a vez, preservando o estado global dos algoritmos Python e evitando operações paralelas com `sys.stdin`.
+- Aceita no máximo quatro chamadas pendentes; uma quinta retorna erro de sobrecarga sem entrar em fila ilimitada.
+- Encerra o Worker após 25 segundos de inatividade (ajustável, para testes, via `INSTAGRAM_WORKER_IDLE_MS`). A próxima chamada reinicializa o interpretador. Evita manter a memória WASM residente indefinidamente.
+- Cada tarefa possui prazo de execução de 30 segundos; o Worker é encerrado se exceder esse tempo. Limite de entrada de 200 KB.
+- Os seis algoritmos **originais** não foram alterados; testes automatizados verificam a equivalência e a execução por Worker.
+
+**Limite importante:** cada Worker Thread ativo consome RAM e entradas na contagem NPROC de forma transitória. A otimização reduz o consumo *ocioso*, não assegura menor uso no pico nem resolve um HTTP 503 emitido pelo proxy LiteSpeed antes de a requisição alcançar o Node.
+
+O branch de implantação `deploy/instagram-hostinger` permanece separado e não é atualizado automaticamente por esta otimização. Validar novamente uso de memória, processos e `/health` antes de disponibilizar a versão otimizada remotamente.
+
