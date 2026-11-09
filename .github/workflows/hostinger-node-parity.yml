@@ -2,7 +2,7 @@ name: Hostinger Node Pyodide parity
 
 on:
   push:
-    branches: [chatgpt-plugin]
+    branches: [chatgpt-plugin, optimization/hostinger-resources]
   workflow_dispatch:
 
 permissions:
