@@ -33,15 +33,17 @@ jobs:
           assert resource["resource"] == "https://instagram-mcp.secretssystem.online/mcp"
           issuers = resource["authorization_servers"]
           assert len(issuers) > 0
-          issuer = issuers[0].rstrip("/")
+          issuer = issuers[0]
+          issuer_base = issuer.rstrip("/")
           assert urlparse(issuer).scheme == "https"
           metadata = None
           for wellknown in ("/.well-known/openid-configuration",
                             "/.well-known/oauth-authorization-server"):
               try:
-                  candidate = get_json(issuer + wellknown)
+                  candidate = get_json(issuer_base + wellknown)
                   matches = candidate.get("issuer") == issuer
-                  print(f"INFO: {wellknown} metadata available; issuer exact match={matches}; PKCE S256 advertised={'S256' in candidate.get('code_challenge_methods_supported', [])}; CIMD={candidate.get('client_id_metadata_document_supported') is True}; DCR={bool(candidate.get('registration_endpoint'))}")
+                  normalized_matches = str(candidate.get("issuer", "")).rstrip("/") == issuer_base
+                  print(f"INFO: {wellknown} metadata available; issuer exact match={matches}; normalized match={normalized_matches}; PKCE S256 advertised={'S256' in candidate.get('code_challenge_methods_supported', [])}; CIMD={candidate.get('client_id_metadata_document_supported') is True}; DCR={bool(candidate.get('registration_endpoint'))}")
                   if matches:
                       metadata = candidate
                       break
