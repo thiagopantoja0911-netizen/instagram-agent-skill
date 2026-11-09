@@ -1,0 +1,51 @@
+name: Hostinger Node Pyodide parity
+
+on:
+  push:
+    branches: [chatgpt-plugin]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  node-parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Node MCP runtime
+        working-directory: node-hostinger
+        run: npm install --no-audit --no-fund
+      - name: Bundle original Python assets
+        working-directory: node-hostinger
+        run: npm run build
+      - name: Run 6-tool parity and input validation tests
+        working-directory: node-hostinger
+        run: npm test
+      - name: Validate JS and Python syntax
+        working-directory: node-hostinger
+        run: |
+          npm run check
+          python3 -m py_compile bridge.py
+      - name: Ensure original algorithm files still match bundled assets
+        run: |
+          cmp skills/ig-reel/hookscore.py node-hostinger/vendor/skills/ig-reel/hookscore.py
+          cmp skills/ig-human/humanize.py node-hostinger/vendor/skills/ig-human/humanize.py
+          cmp skills/ig-viral/swipe.py node-hostinger/vendor/skills/ig-viral/swipe.py
+      - name: Publish isolated Hostinger app artifact
+        run: |
+          mkdir -p dist
+          tar -czf dist/instagram-hostinger-node.tar.gz --exclude=node_modules -C node-hostinger .
+          tar -tzf dist/instagram-hostinger-node.tar.gz | head -20
+      - uses: actions/upload-artifact@v4
+        with:
+          name: instagram-hostinger-node
+          path: dist/instagram-hostinger-node.tar.gz
+          retention-days: 7

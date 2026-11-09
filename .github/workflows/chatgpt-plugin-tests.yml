@@ -1,0 +1,46 @@
+name: ChatGPT plugin checks
+
+on:
+  push:
+    branches: [chatgpt-plugin]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install MCP SDK v2
+        run: python3 -m pip install -r server/requirements.txt
+      - name: End-to-end MCP protocol tests
+        run: python3 tests/mcp_integration.py
+      - name: Fail-closed remote security checks
+        run: python3 tests/remote_security.py
+      - name: Syntax and original script smoke tests
+        run: |
+          python3 -m compileall -q skills server tests
+          python3 tests/smoke.py
+          python3 -m json.tool plugin.json >/dev/null
+          python3 -m json.tool skills/ig-reel/hooks.json >/dev/null
+          python3 -m json.tool skills/ig-profile/rubric.json >/dev/null
+          python3 -m json.tool skills/ig-human/slop.json >/dev/null
+      - name: Verify deployment container builds
+        run: docker build --file server/Dockerfile --tag instagram-agent-mcp:ci .
+      - name: Package original skills + ChatGPT adapter
+        run: |
+          find skills server tests -type d -name __pycache__ -prune -exec rm -rf {} +
+          find skills server tests -type f -name '*.pyc' -delete
+          mkdir -p dist
+          zip -q -r dist/instagram-agent-chatgpt.zip plugin.json CHATGPT.md README_CHATGPT.md LICENSE README.md skills templates server tests node-hostinger .claude-plugin
+          unzip -t dist/instagram-agent-chatgpt.zip | tail -1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: instagram-agent-chatgpt
+          path: dist/instagram-agent-chatgpt.zip
+          if-no-files-found: error

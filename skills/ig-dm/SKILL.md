@@ -116,3 +116,8 @@ Then stop. A third converts nobody and costs the relationship.
 The message, the character count, and the two follow-ups with the day each
 goes out, all run through `/ig-human`. The user sends every one of them by
 hand, or through their own approved automation for keyword replies only.
+
+---
+## Compatibilidade ChatGPT / Codex
+
+Quando esta skill for usada no ChatGPT, leia `CHATGPT.md` na raiz. Os caminhos `~/.claude/instagram/` e comandos `/ig-*` referem-se à integração original com Claude. No ChatGPT, use o contexto ou armazenamento realmente disponível. Não declare execução de scripts, scores ou persistência sem resposta de Python/MCP conectado. O conteúdo é sempre entregue ao usuário para aprovação e publicação manual; nenhuma ação externa acontece automaticamente.

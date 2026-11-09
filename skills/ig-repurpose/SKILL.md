@@ -86,3 +86,8 @@ Say "write Tuesday" and I will draft it.
 Then draft on request, one at a time, each through `/ig-reel` and `/ig-human`.
 Do not dump four finished scripts at once. They will all sound the same and the
 user will shoot none of them.
+
+---
+## Compatibilidade ChatGPT / Codex
+
+Quando esta skill for usada no ChatGPT, leia `CHATGPT.md` na raiz. Os caminhos `~/.claude/instagram/` e comandos `/ig-*` referem-se à integração original com Claude. No ChatGPT, use o contexto ou armazenamento realmente disponível. Não declare execução de scripts, scores ou persistência sem resposta de Python/MCP conectado. O conteúdo é sempre entregue ao usuário para aprovação e publicação manual; nenhuma ação externa acontece automaticamente.

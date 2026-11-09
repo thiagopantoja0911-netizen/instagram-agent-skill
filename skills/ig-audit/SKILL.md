@@ -102,3 +102,8 @@ DO MORE: the ones with a cost you paid and a number attached.
 Then hand the conclusions to `/ig-plan` so next week is built on the user's own
 evidence rather than on defaults, and to `/ig-viral` so the swipe file gets
 filtered to the formulas that work for this account specifically.
+
+---
+## Compatibilidade ChatGPT / Codex
+
+Quando esta skill for usada no ChatGPT, leia `CHATGPT.md` na raiz. Os caminhos `~/.claude/instagram/` e comandos `/ig-*` referem-se à integração original com Claude. No ChatGPT, use o contexto ou armazenamento realmente disponível. Não declare execução de scripts, scores ou persistência sem resposta de Python/MCP conectado. O conteúdo é sempre entregue ao usuário para aprovação e publicação manual; nenhuma ação externa acontece automaticamente.

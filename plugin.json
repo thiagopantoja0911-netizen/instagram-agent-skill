@@ -1,0 +1,43 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "instagram-agent",
+  "version": "1.2.0",
+  "description": "Treze habilidades de estrategia e criacao de conteudo para Instagram, preservando as ferramentas Python originais.",
+  "author": {
+    "name": "Jake Schincariol",
+    "url": "https://opusjake.ai"
+  },
+  "repository": "https://github.com/thiagopantoja0911-netizen/instagram-agent-skill",
+  "homepage": "https://github.com/thiagopantoja0911-netizen/instagram-agent-skill",
+  "license": "MIT",
+  "keywords": [
+    "instagram",
+    "reels",
+    "copywriting",
+    "marketing",
+    "humanizer",
+    "content"
+  ],
+  "extensions": {
+    "com.openai": {
+      "onboardingSkill": "./skills/ig-setup/SKILL.md",
+      "interface": {
+        "displayName": "Instagram Agent",
+        "shortDescription": "13 habilidades para criar e otimizar conteudo no Instagram.",
+        "longDescription": "Reels, legendas, carrosseis, Stories, perfil, planejamento, auditorias, comentarios, DMs e humanizacao. Os algoritmos Python requerem executor conectado para serem usados.",
+        "developerName": "Instagram Agent Skill (fork do projeto de Jake Schincariol)",
+        "category": "Productivity",
+        "capabilities": [
+          "Read",
+          "Write"
+        ],
+        "websiteURL": "https://github.com/thiagopantoja0911-netizen/instagram-agent-skill",
+        "defaultPrompt": [
+          "Crie um Reel com ig-reel.",
+          "Planeje meu Instagram usando ig-plan.",
+          "Audite minha bio usando ig-profile."
+        ]
+      }
+    }
+  }
+}
