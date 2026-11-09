@@ -30,6 +30,8 @@ jobs:
           python3 -m json.tool skills/ig-reel/hooks.json >/dev/null
           python3 -m json.tool skills/ig-profile/rubric.json >/dev/null
           python3 -m json.tool skills/ig-human/slop.json >/dev/null
+      - name: Verify deployment container builds
+        run: docker build --file server/Dockerfile --tag instagram-agent-mcp:ci .
       - name: Package original skills + ChatGPT adapter
         run: |
           find skills server tests -type d -name __pycache__ -prune -exec rm -rf {} +
