@@ -1,0 +1,22 @@
+{
+  "name": "instagram-agent-mcp-hostinger",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Isolated MCP on Hostinger Node.js with original Instagram Python algorithms running via Pyodide",
+  "engines": {"node": ">=22.13.0"},
+  "scripts": {
+    "start": "node server.mjs",
+    "check": "node --check engine.mjs && node --check server.mjs",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/express": "^2.0.0",
+    "@modelcontextprotocol/node": "^2.0.0",
+    "@modelcontextprotocol/server": "^2.0.0",
+    "express": "^5.1.0",
+    "jose": "^6.0.0",
+    "pyodide": "^0.28.0",
+    "zod": "^4.0.0"
+  }
+}
