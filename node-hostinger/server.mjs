@@ -8,7 +8,7 @@ import { createRemoteJWKSet, jwtVerify } from 'jose';
 import express from 'express';
 import { URL } from 'node:url';
 import * as z from 'zod/v4';
-import { invokeTool } from './engine.mjs';
+import { invokeToolBounded } from './runtime.mjs';
 
 const publicUrl = process.env.INSTAGRAM_MCP_PUBLIC_URL || '';
 const issuer = process.env.INSTAGRAM_MCP_OIDC_ISSUER || '';
@@ -72,7 +72,7 @@ const handler = createMcpHandler(() => {
   for (const [name, description, inputSchema] of TOOLS) {
     server.registerTool(name, {description, inputSchema}, async input => {
       try {
-        const output = await invokeTool(name, input);
+        const output = await invokeToolBounded(name, input);
         return {content: [{type: 'text', text: JSON.stringify(output)}]};
       } catch {
         // Never disclose Python tracebacks, filesystem paths or submitted text.
