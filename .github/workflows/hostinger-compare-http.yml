@@ -16,11 +16,11 @@ jobs:
         shell: bash
         run: |
           set -u
-          for host in mcp.secretssystem.online instagram-mcp.secretssystem.online; do
+          for host in mcp.secretssystem.online instagram-mcp.secretssystem.online mcp-ofertas.salevo.site secretssystem.online salevo.site darkslateblue-ibis-638566.hostingersite.com; do
             echo "==== $host ===="
             curl -4 -sS -m 12 -o /tmp/hostinger-response-body.txt -D /tmp/hostinger-response-headers.txt \
               -w 'http=%{http_code} ip=%{remote_ip} ssl_verify=%{ssl_verify_result} total=%{time_total}s\n' \
-              "https://$host/health" || true
+              "https://$host/" || true
             grep -Ei '^(server|content-type|via|retry-after|cache-control|x-)' /tmp/hostinger-response-headers.txt | head -12 || true
             echo "response_length=$(wc -c < /tmp/hostinger-response-body.txt)"
           done
