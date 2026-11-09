@@ -22,15 +22,26 @@ jobs:
           test "$code" = "200" || { echo "Expected /health 200, received $code"; cat /tmp/instagram-health.json; exit 1; }
           python3 -c 'import json; s=json.load(open("/tmp/instagram-health.json")); assert s["service"]=="instagram-agent" and s["auth"]=="oidc-required" and s["ready"] is True, s'
           echo "PASS: public health endpoint and OIDC configuration are active."
-      - name: Verify OAuth protected-resource metadata
+      - name: Verify OAuth protected-resource metadata and authorization-server discovery
         shell: bash
         run: |
           set -euo pipefail
           BASE="https://instagram-mcp.secretssystem.online"
           code="$(curl --retry 3 --retry-delay 3 -sS -m 15 -o /tmp/instagram-resource.json -w '%{http_code}' "$BASE/.well-known/oauth-protected-resource")"
           test "$code" = "200" || { echo "Expected protected-resource metadata 200, received $code"; cat /tmp/instagram-resource.json; exit 1; }
+          issuer="$(python3 -c 'import json; print(json.load(open("/tmp/instagram-resource.json"))["authorization_servers"][0])')"
           python3 -c 'import json; j=json.load(open("/tmp/instagram-resource.json")); assert j["resource"]=="https://instagram-mcp.secretssystem.online/mcp" and len(j["authorization_servers"])>0 and "instagram:analyze" in j["scopes_supported"], j'
-          echo "PASS: OAuth resource metadata is published."
+          found=0
+          for path in "/.well-known/openid-configuration" "/.well-known/oauth-authorization-server"; do
+            code="$(curl -sS -m 15 -o /tmp/instagram-issuer.json -w '%{http_code}' "${issuer%/}$path" || true)"
+            if [ "$code" = "200" ]; then
+              python3 -c 'import json; j=json.load(open("/tmp/instagram-issuer.json")); assert j.get("issuer") and j.get("authorization_endpoint") and j.get("token_endpoint"), j'
+              found=1
+              break
+            fi
+          done
+          test "$found" = "1" || { echo "Authorization server discovery is unavailable at the configured issuer."; exit 1; }
+          echo "PASS: resource metadata and OAuth/OIDC authorization-server discovery are published."
       - name: Verify anonymous MCP access requires a bearer token
         shell: bash
         run: |
@@ -41,12 +52,14 @@ jobs:
           grep -qi '^www-authenticate: Bearer' /tmp/instagram-mcp-headers.txt
           python3 -c 'import json; j=json.load(open("/tmp/instagram-mcp.json")); assert j.get("error")=="BEARER_REQUIRED", j'
           echo "PASS: anonymous MCP requests are rejected with OAuth challenge."
-      - name: Verify disallowed origin is rejected
+      - name: Verify ChatGPT origin is allowed and untrusted origin is rejected
         shell: bash
         run: |
           set -euo pipefail
           BASE="https://instagram-mcp.secretssystem.online"
-          code="$(curl --retry 3 --retry-delay 3 -sS -m 15 -o /tmp/instagram-origin.json -w '%{http_code}' -X POST "$BASE/mcp" -H 'Content-Type: application/json' -H 'Origin: https://attacker.invalid' --data '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}')"
+          code="$(curl -sS -m 15 -o /tmp/instagram-chatgpt-origin.json -w '%{http_code}' -X POST "$BASE/mcp" -H 'Content-Type: application/json' -H 'Origin: https://chatgpt.com' --data '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}')"
+          test "$code" = "401" || { echo "Expected allowed ChatGPT origin to reach auth (401), received $code"; cat /tmp/instagram-chatgpt-origin.json; exit 1; }
+          code="$(curl -sS -m 15 -o /tmp/instagram-origin.json -w '%{http_code}' -X POST "$BASE/mcp" -H 'Content-Type: application/json' -H 'Origin: https://attacker.invalid' --data '{"jsonrpc":"2.0","id":3,"method":"tools/list","params":{}}')"
           test "$code" = "403" || { echo "Expected disallowed origin 403, received $code"; cat /tmp/instagram-origin.json; exit 1; }
-          python3 -c 'import json; j=json.load(open("/tmp/instagram-origin.json")); assert j.get("error")=="ORIGIN_NOT_ALLOWED", j'
-          echo "PASS: untrusted Origin is rejected."
+          python3 -c 'import json; j=json.load(open("/tmp/instagram-origin.json")); assert "Invalid Origin" in j.get("error",{}).get("message","") or j.get("error")=="ORIGIN_NOT_ALLOWED", j'
+          echo "PASS: ChatGPT origin reaches authentication; untrusted origins are rejected."
