@@ -10,7 +10,8 @@ import { URL } from 'node:url';
 import * as z from 'zod/v4';
 import { invokeTool } from './engine.mjs';
 
-const publicUrl = process.env.INSTAGRAM_MCP_PUBLIC_URL || '';
+const DEFAULT_PUBLIC_URL = 'https://instagram-mcp.secretssystem.online/mcp';
+const publicUrl = process.env.INSTAGRAM_MCP_PUBLIC_URL || DEFAULT_PUBLIC_URL;
 const issuer = process.env.INSTAGRAM_MCP_OIDC_ISSUER || '';
 const jwksUrl = process.env.INSTAGRAM_MCP_OIDC_JWKS_URL || '';
 const audience = process.env.INSTAGRAM_MCP_OIDC_AUDIENCE || '';
@@ -29,7 +30,17 @@ const configured = isHttps(publicUrl, true) && isHttps(issuer) && isHttps(jwksUr
   typeof audience === 'string' && audience.length > 0 && allowedSubjects.size > 0 &&
   /^[-a-zA-Z0-9:_./]+$/.test(scope);
 const jwks = configured ? createRemoteJWKSet(new URL(jwksUrl), {timeoutDuration: 5000}) : null;
-const app = createMcpExpressApp();
+let publicHostname = 'instagram-mcp.secretssystem.online';
+try { publicHostname = new URL(publicUrl).hostname; } catch {}
+
+const sdkAllowedOrigins = [...allowedOrigins].map(origin => {
+  try { return new URL(origin).hostname || origin; } catch { return origin; }
+});
+const app = createMcpExpressApp({
+  host: '0.0.0.0',
+  allowedHosts: [publicHostname, 'localhost', '127.0.0.1', '[::1]'],
+  allowedOrigins: sdkAllowedOrigins,
+});
 app.disable('x-powered-by');
 app.use(express.json({limit: '256kb', type: 'application/json'}));
 
