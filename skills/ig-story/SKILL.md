@@ -95,3 +95,8 @@ After: everyone who votes Yes gets a reply. That is the whole funnel.
 ```
 
 Nothing is posted. The user posts it.
+
+---
+## Compatibilidade ChatGPT / Codex
+
+Quando esta skill for usada no ChatGPT, leia `CHATGPT.md` na raiz. Os caminhos `~/.claude/instagram/` e comandos `/ig-*` referem-se à integração original com Claude. No ChatGPT, use o contexto ou armazenamento realmente disponível. Não declare execução de scripts, scores ou persistência sem resposta de Python/MCP conectado. O conteúdo é sempre entregue ao usuário para aprovação e publicação manual; nenhuma ação externa acontece automaticamente.
