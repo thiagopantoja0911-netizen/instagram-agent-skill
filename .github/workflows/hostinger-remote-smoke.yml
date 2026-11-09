@@ -13,19 +13,40 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Check HTTPS health endpoint
+      - name: Check public health and OAuth readiness
         shell: bash
         run: |
           set -euo pipefail
-          HEALTH_URL="https://instagram-mcp.secretssystem.online/health"
-          code="$(curl --retry 3 --retry-delay 5 -sS -m 15 -o /tmp/instagram-health.json -w '%{http_code}' "$HEALTH_URL")"
-          test "$code" = "200" || { echo "Expected /health 200, received $code"; exit 1; }
-          python3 -c 'import json; s=json.load(open("/tmp/instagram-health.json")); assert s["service"]=="instagram-agent" and s["auth"]=="locked" and s["ready"] is False, s'
-      - name: Verify anonymous tool access is blocked
+          BASE="https://instagram-mcp.secretssystem.online"
+          code="$(curl --retry 3 --retry-delay 3 -sS -m 15 -o /tmp/instagram-health.json -w '%{http_code}' "$BASE/health")"
+          test "$code" = "200" || { echo "Expected /health 200, received $code"; cat /tmp/instagram-health.json; exit 1; }
+          python3 -c 'import json; s=json.load(open("/tmp/instagram-health.json")); assert s["service"]=="instagram-agent" and s["auth"]=="oidc-required" and s["ready"] is True, s'
+          echo "PASS: public health endpoint and OIDC configuration are active."
+      - name: Verify OAuth protected-resource metadata
         shell: bash
         run: |
           set -euo pipefail
-          code="$(curl --retry 3 --retry-delay 5 -sS -m 15 -o /tmp/instagram-mcp.json -w '%{http_code}'             -X POST 'https://instagram-mcp.secretssystem.online/mcp'             -H 'Content-Type: application/json'             --data '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}')"
-          test "$code" = "503" || { echo "Expected locked /mcp 503, received $code"; exit 1; }
-          python3 -c 'import json; j=json.load(open("/tmp/instagram-mcp.json")); assert j.get("error")=="MCP_AUTH_NOT_CONFIGURED", j'
-          echo 'PASS: remote MCP locked without OAuth and health endpoint available.'
+          BASE="https://instagram-mcp.secretssystem.online"
+          code="$(curl --retry 3 --retry-delay 3 -sS -m 15 -o /tmp/instagram-resource.json -w '%{http_code}' "$BASE/.well-known/oauth-protected-resource")"
+          test "$code" = "200" || { echo "Expected protected-resource metadata 200, received $code"; cat /tmp/instagram-resource.json; exit 1; }
+          python3 -c 'import json; j=json.load(open("/tmp/instagram-resource.json")); assert j["resource"]=="https://instagram-mcp.secretssystem.online/mcp" and len(j["authorization_servers"])>0 and "instagram:analyze" in j["scopes_supported"], j'
+          echo "PASS: OAuth resource metadata is published."
+      - name: Verify anonymous MCP access requires a bearer token
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://instagram-mcp.secretssystem.online"
+          code="$(curl --retry 3 --retry-delay 3 -sS -m 15 -D /tmp/instagram-mcp-headers.txt -o /tmp/instagram-mcp.json -w '%{http_code}' -X POST "$BASE/mcp" -H 'Content-Type: application/json' --data '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}')"
+          test "$code" = "401" || { echo "Expected anonymous /mcp 401, received $code"; cat /tmp/instagram-mcp.json; exit 1; }
+          grep -qi '^www-authenticate: Bearer' /tmp/instagram-mcp-headers.txt
+          python3 -c 'import json; j=json.load(open("/tmp/instagram-mcp.json")); assert j.get("error")=="BEARER_REQUIRED", j'
+          echo "PASS: anonymous MCP requests are rejected with OAuth challenge."
+      - name: Verify disallowed origin is rejected
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE="https://instagram-mcp.secretssystem.online"
+          code="$(curl --retry 3 --retry-delay 3 -sS -m 15 -o /tmp/instagram-origin.json -w '%{http_code}' -X POST "$BASE/mcp" -H 'Content-Type: application/json' -H 'Origin: https://attacker.invalid' --data '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}')"
+          test "$code" = "403" || { echo "Expected disallowed origin 403, received $code"; cat /tmp/instagram-origin.json; exit 1; }
+          python3 -c 'import json; j=json.load(open("/tmp/instagram-origin.json")); assert j.get("error")=="ORIGIN_NOT_ALLOWED", j'
+          echo "PASS: untrusted Origin is rejected."
