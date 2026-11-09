@@ -109,3 +109,8 @@ do not tell a user their text is undetectable.
    again. Two rounds is normal. Five means the draft was written by formula,
    and the fix is a different draft, not more passes.
 5. Show the user the cleaned text and the score. Never the score alone.
+
+---
+## Compatibilidade ChatGPT / Codex
+
+Quando esta skill for usada no ChatGPT, leia `CHATGPT.md` na raiz. Os caminhos `~/.claude/instagram/` e comandos `/ig-*` referem-se à integração original com Claude. No ChatGPT, use o contexto ou armazenamento realmente disponível. Não declare execução de scripts, scores ou persistência sem resposta de Python/MCP conectado. O conteúdo é sempre entregue ao usuário para aprovação e publicação manual; nenhuma ação externa acontece automaticamente.
