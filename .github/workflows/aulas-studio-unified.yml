@@ -42,3 +42,4 @@ jobs:
           name: aulas-instagram-motion-studio-unified
           path: dist/aulas-instagram-motion-studio/
           if-no-files-found: error
+          include-hidden-files: true
