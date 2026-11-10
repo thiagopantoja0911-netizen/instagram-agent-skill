@@ -1,0 +1,43 @@
+{
+  "interface": {
+    "capabilities": [
+      "Read",
+      "Write",
+      "Interactive"
+    ],
+    "category": "Productivity",
+    "defaultPrompt": [
+      "Crie um Reel com os scripts do Instagram Agent e direção visual do Aulas Motion, com venda indireta e sem slides.",
+      "Faça auditoria de um MP4 usando o corpus motion e o objetivo do Reel.",
+      "Prepare o storyboard, cronograma e teste de renderização antes de produzir quatro variantes."
+    ],
+    "developerName": "Thiago Rico",
+    "displayName": "Aulas Instagram Motion Studio",
+    "longDescription": "Instagram Agent (13 habilidades + setup) com seus scripts e regras originais, Aulas Motion Reference integral, direção de Reels, áudio e auditoria de qualidade. Sem publicação automática; ferramentas MCP remotas exigem OAuth.",
+    "shortDescription": "Instagram + Motion + QA"
+  },
+  "extensions": {
+    "com.openai": {
+      "onboardingSkill": "./skills/ig-motion-director/SKILL.md"
+    }
+  },
+  "name": "aulas-instagram-motion-studio",
+  "version": "0.2.0",
+  "description": "Reúne integralmente as 14 habilidades Instagram, seus scripts Python e regras, com o corpus de 13 referências de motion, direção criativa e auditoria audiovisual.",
+  "author": {
+    "name": "Thiago Rico",
+    "email": "thiagorico.788@gmail.com",
+    "url": "https://github.com/thiagopantoja0911-netizen/instagram-agent-skill"
+  },
+  "keywords": [
+    "instagram",
+    "reels",
+    "motion",
+    "hyperframes",
+    "storyboard",
+    "audiovisual",
+    "roteiros",
+    "qa"
+  ],
+  "skills": "./skills"
+}

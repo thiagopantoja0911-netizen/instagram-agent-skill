@@ -1,0 +1,44 @@
+name: Aulas Studio Unified — tests and package
+on:
+  push:
+    branches: [feat/aulas-instagram-motion-studio-completo]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  studio:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify original scripts, portable skills and references
+        run: |
+          python3 -m compileall -q skills tests
+          python3 tests/studio_integracao.py
+          python3 tests/smoke.py
+          python3 -m json.tool plugin.json >/dev/null
+          python3 -m json.tool .codex-plugin/plugin.json >/dev/null
+      - name: Verify no credentials in tracked project
+        run: |
+          ! grep -R -E '^(INSTAGRAM_MCP_OIDC_|ACCESS_TOKEN=|CLIENT_SECRET=)' plugin.json skills README.md || exit 1
+      - name: Build exact plugin package
+        run: |
+          mkdir -p dist/aulas-instagram-motion-studio
+          cp plugin.json README.md CHATGPT.md README_CHATGPT.md LICENSE dist/aulas-instagram-motion-studio/
+          cp -r .codex-plugin skills templates server node-hostinger tests dist/aulas-instagram-motion-studio/
+          find dist -type d -name __pycache__ -prune -exec rm -rf {} +
+          find dist -type f -name '*.pyc' -delete
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('dist/aulas-instagram-motion-studio')
+          assert len(list(p.glob('skills/*/SKILL.md')))==17
+          assert len(list(p.glob('skills/reference-video-decomposer/references/*')))==10
+          print('Package ready:',sum(1 for f in p.rglob('*') if f.is_file()),'files')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: aulas-instagram-motion-studio-unified
+          path: dist/aulas-instagram-motion-studio/
+          if-no-files-found: error
