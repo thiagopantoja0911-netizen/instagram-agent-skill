@@ -14,7 +14,7 @@ assert M['name']=='aulas-instagram-motion-studio' and M['version']=='0.2.0'
 for name in SKILLS:
  f=P/'skills'/name/'SKILL.md'; assert f.is_file(),str(f)
  t=f.read_text(encoding='utf-8'); assert t.startswith('---\\n'.replace('\\n','\n'))
- assert re.search(r'(?m)^name:\\s*'.replace('\\s','\\s')+re.escape(name)+r'\\s*$'.replace('\\s','\\s'),t),name
+ assert any(line.strip()==('name: '+name) for line in t.splitlines()[:12]), name
 for name in SCRIPTS:
  f=P/'skills'/name; assert f.is_file(),str(f); py_compile.compile(str(f),doraise=True)
 for name in RULES:
